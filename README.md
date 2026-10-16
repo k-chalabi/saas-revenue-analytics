@@ -22,7 +22,9 @@ The project also explores containerization with Docker and Infrastructure as Cod
 - [x] DEV / CI / PROD environment separation
 - [x] CI pipeline
 - [x] CD pipeline
-- [ ] Power BI dashboard
+- [x] Power BI - Executive Overview
+- [ ] Power BI - Revenue & Customer Retention
+- [ ] Power BI - Customer Analysis
 - [ ] Airflow orchestration
 - [ ] Docker containerization
 - [ ] Terraform infrastructure
@@ -152,3 +154,16 @@ GitHub Actions automates both validation and deployment:
 - **CD:** each merge to main triggers a production dbt build and deploys the validated models to the production datasets.
 
 Dedicated GCP service accounts and dataset-level permissions are used for each environment to maintain separation of responsibilities and limit access.
+
+
+## Power BI Dashboard
+
+### Executive Overview
+
+The Executive Overview dashboard provides a consolidated view of SaaS business performance through key revenue, customer, and churn metrics.
+
+Built with Power BI, it features custom KPI cards powered by DAX measures, dynamic year and month slicers, MoM and YoY comparisons, conditional formatting, interactive cross-filtering, informational tooltips, and bookmark-driven visual navigation.
+
+**Data Coverage:** The dataset covers SaaS activity through April 2026, the last complete month available for analysis. Reporting is limited to this period to ensure consistent monthly KPIs and avoid comparisons based on incomplete months.
+
+![SaaS Revenue Analytics - Executive Overview](powerbi/executive-overview.png)
