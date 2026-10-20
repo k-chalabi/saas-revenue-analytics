@@ -1,6 +1,9 @@
 name: saas-revenue-airflow
 x-airflow-common: &airflow-common
-  image: apache/airflow:3.1.8
+  build:
+    context: .
+    dockerfile: Dockerfile
+  image: saas-revenue-airflow:dev
   environment:
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
     AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
