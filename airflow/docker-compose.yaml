@@ -16,12 +16,16 @@ x-airflow-common: &airflow-common
     DBT_LOG_PATH: /tmp/dbt/logs
     DBT_TARGET: dev
     DBT_PROFILES_DIR: /opt/airflow/dbt-config
+    GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/secrets/gcp-dbt-key.json
+    AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: "google-cloud-platform://"
+    AIRFLOW_CONN_GOOGLE_CLOUD_INGESTION: 'google-cloud-platform://?key_path=%2Fopt%2Fairflow%2Fsecrets%2Fgcp-ingestion-key.json'
   volumes:
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
     - ../dbt/saas_revenue_analytics:/opt/airflow/dbt:ro
     - ../secrets/gcp-dbt-key.json:/opt/airflow/secrets/gcp-dbt-key.json:ro
+    - ../secrets/gcp-ingestion-key.json:/opt/airflow/secrets/gcp-ingestion-key.json:ro
     - ./config/dbt:/opt/airflow/dbt-config:ro
   depends_on:
     postgres:
