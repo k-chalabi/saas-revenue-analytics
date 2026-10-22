@@ -1,38 +1,66 @@
 name: saas-revenue-airflow
+
+# Shared configuration used by all Airflow services.
 x-airflow-common: &airflow-common
+
+  # Build our custom Airflow image with dbt installed.
   build:
     context: .
     dockerfile: Dockerfile
   image: saas-revenue-airflow:dev
+
   environment:
+    # Use LocalExecutor to run tasks locally.
     AIRFLOW__CORE__EXECUTOR: LocalExecutor
+
+    # Configure Airflow authentication and database connection.
     AIRFLOW__CORE__AUTH_MANAGER: airflow.api_fastapi.auth.managers.simple.simple_auth_manager.SimpleAuthManager
     AIRFLOW__CORE__SIMPLE_AUTH_MANAGER_USERS: admin:admin
     AIRFLOW__DATABASE__SQL_ALCHEMY_CONN: postgresql+psycopg2://airflow:${POSTGRES_PASSWORD}@postgres/airflow
     AIRFLOW__CORE__LOAD_EXAMPLES: "false"
     AIRFLOW__API_AUTH__JWT_SECRET: ${AIRFLOW_JWT_SECRET}
+
+    # Allow Airflow tasks to communicate with the execution API.
     AIRFLOW__CORE__EXECUTION_API_SERVER_URL: http://airflow-api-server:8080/execution/
+
+    # Store dbt generated files outside the read-only project directory.
     DBT_TARGET_PATH: /tmp/dbt/target
     DBT_LOG_PATH: /tmp/dbt/logs
+
+    # Configure dbt to use the DEV environment and its profiles.yml.
     DBT_TARGET: dev
     DBT_PROFILES_DIR: /opt/airflow/dbt-config
+
+    # Use the DEV service account for dbt transformations.
     GOOGLE_APPLICATION_CREDENTIALS: /opt/airflow/secrets/gcp-dbt-key.json
+
+    # Default Google Cloud connection uses the DEV credentials.
     AIRFLOW_CONN_GOOGLE_CLOUD_DEFAULT: "google-cloud-platform://"
+
+    # Dedicated connection for GCS to BigQuery RAW ingestion.
+    # It uses a separate service account with restricted permissions.
     AIRFLOW_CONN_GOOGLE_CLOUD_INGESTION: 'google-cloud-platform://?key_path=%2Fopt%2Fairflow%2Fsecrets%2Fgcp-ingestion-key.json'
+
   volumes:
+    # Share DAGs, logs and plugins between Windows and Airflow containers.
     - ./dags:/opt/airflow/dags
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
+
+    # Mount the dbt project and configuration in read-only mode.
     - ../dbt/saas_revenue_analytics:/opt/airflow/dbt:ro
     - ../secrets/gcp-dbt-key.json:/opt/airflow/secrets/gcp-dbt-key.json:ro
     - ../secrets/gcp-ingestion-key.json:/opt/airflow/secrets/gcp-ingestion-key.json:ro
     - ./config/dbt:/opt/airflow/dbt-config:ro
+
+  # Wait until PostgreSQL is ready before starting Airflow.
   depends_on:
     postgres:
       condition: service_healthy
 
 
 services:
+  # PostgreSQL stores Airflow metadata and execution history.
   postgres:
     image: postgres:16
     environment:
@@ -48,13 +76,13 @@ services:
       start_period: 5s
     restart: unless-stopped
 
-      
+  # Initialize or update the Airflow metadata database.
   airflow-init:
     <<: *airflow-common
     command: db migrate
     restart: "no"
 
-
+  # Serve the Airflow web interface and API.
   airflow-api-server:
     <<: *airflow-common
     command: api-server
@@ -65,7 +93,7 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-
+  # Schedule DAG runs and manage task execution.
   airflow-scheduler:
     <<: *airflow-common
     command: scheduler
@@ -74,7 +102,7 @@ services:
         condition: service_completed_successfully
     restart: unless-stopped
 
-
+  # Discover and parse Python DAG files.
   airflow-dag-processor:
     <<: *airflow-common
     command: dag-processor
@@ -84,5 +112,6 @@ services:
     restart: unless-stopped
 
 
+# Keep PostgreSQL data when containers are recreated.
 volumes:
   postgres-db-volume:
