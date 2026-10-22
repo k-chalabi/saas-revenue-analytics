@@ -23,3 +23,9 @@ secrets/
 # OS
 .DS_Store
 Thumbs.db
+
+# Apache Airflow
+airflow/logs/
+airflow/__pycache__/
+airflow/airflow.db
+airflow/standalone_admin_password.txt

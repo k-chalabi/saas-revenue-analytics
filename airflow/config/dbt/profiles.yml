@@ -1,0 +1,14 @@
+saas_revenue_analytics:
+  target: dev
+  outputs:
+    dev:
+      type: bigquery
+      method: service-account
+      project: saas-revenue-analytics-507122
+      dataset: dbt_karim
+      location: US
+      keyfile: /opt/airflow/secrets/gcp-dbt-key.json
+      threads: 4
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      job_retries: 1
