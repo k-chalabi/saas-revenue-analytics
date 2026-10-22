@@ -1,0 +1,53 @@
+
+name: Airflow CI
+
+on:
+  pull_request:
+    branches:
+      - main
+
+jobs:
+  airflow-ci:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Build Airflow Docker image
+        run: docker build -t saas-revenue-airflow:ci ./airflow
+
+      - name: Check DAG Python syntax
+        run: python -m compileall -q airflow/dags
+
+      - name: Validate Airflow DAGs
+        run: |
+          docker run --rm \
+            -v "${{ github.workspace }}/airflow/dags:/opt/airflow/dags:ro" \
+            saas-revenue-airflow:ci \
+            python -c "
+          from airflow.models.dagbag import DagBag
+
+          dagbag = DagBag(
+              dag_folder='/opt/airflow/dags',
+              include_examples=False
+          )
+
+          if dagbag.import_errors:
+              for path, error in dagbag.import_errors.items():
+                  print(f'{path}: {error}')
+              raise SystemExit(1)
+
+          expected_dags = {
+              'gcs_to_bigquery_raw',
+              'saas_revenue_pipeline_dev'
+          }
+
+          missing_dags = expected_dags - set(dagbag.dags)
+
+          if missing_dags:
+              print(f'Missing DAGs: {missing_dags}')
+              raise SystemExit(1)
+
+          print('All Airflow DAGs validated successfully.')
+          "
