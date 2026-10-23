@@ -11,7 +11,7 @@ modeling with BigQuery and dbt, data quality testing, environment separation,
 automated CI/CD pipelines, business intelligence with Power BI, and workflow
 orchestration with Airflow.
 
-The project also explores containerization with Docker and Infrastructure as Code with Terraform to build a more reproducible and production-oriented analytics platform.
+Docker is used to containerize the Airflow environment, providing a consistent foundation for local development and future production deployment on a Google Cloud VM. Infrastructure as Code with Terraform is also planned to support cloud infrastructure provisioning.
 
 
 ## Project Roadmap
@@ -20,13 +20,14 @@ The project also explores containerization with Docker and Infrastructure as Cod
 - [x] dbt staging, intermediate and marts
 - [x] Data quality testing
 - [x] DEV / CI / PROD environment separation
-- [x] CI pipeline
-- [x] CD pipeline
+- [x] CI pipeline (dbt and Airflow)
+- [x] CD pipeline (dbt)
 - [x] Power BI - Executive Overview
 - [ ] Power BI - Revenue & Customer Retention
 - [ ] Power BI - Customer Analysis
-- [ ] Airflow orchestration
-- [ ] Docker containerization
+- [x] Docker containerization
+- [x] Airflow DEV orchestration
+- [ ] Airflow PROD orchestration and deployment
 - [ ] Terraform infrastructure
 
 
@@ -36,31 +37,37 @@ The project follows a layered analytics architecture with separate development, 
 
 ```text
                          HubSpot / Subskribe
-                                 │
-                                 ▼
-                        ┌─────────────────┐
-                        │  BigQuery RAW   │
-                        │       raw       │
-                        └────────┬────────┘
-                                 │
-                                 ▼
-                                dbt
-                                 │
-              ┌──────────────────┼─────────────────────┐
-              │                  │                     │
-              ▼                  ▼                     ▼
-         DEVELOPMENT             CI                PRODUCTION
-          dbt_karim            dbt_ci                  │
-              │                  │                     │
-      stg / int / marts   stg / int / marts     ┌──────┴──────┐
-                                                │             │
-                                                ▼             ▼
-                                      dbt_prod_technical   analytics
-                                            stg / int        marts
-                                                              │
-                                                              ▼
-                                                           Power BI
+                                  │
+                                  ▼
+                         Google Cloud Storage
+                                  │
+                                  ▼
+                         ┌─────────────────┐
+                         │  BigQuery RAW   │
+                         │       raw       │
+                         └────────┬────────┘
+                                  │
+                                  ▼
+                                 dbt
+                                  │
+                 ┌────────────────┼─────────────────────┐
+                 │                │                     │
+                 ▼                ▼                     ▼
+            DEVELOPMENT           CI                PRODUCTION
+             dbt_karim          dbt_ci                  │
+                 │                │                     │
+          stg / int / marts  stg / int / marts   ┌──────┴──────┐
+                                                 │             │
+                                                 ▼             ▼
+                                        dbt_prod_technical  analytics
+                                              stg / int       marts
+                                                               │
+                                                               ▼
+                                                            Power BI
 ```
+The development pipeline is orchestrated locally using Apache Airflow and Docker. Airflow manages data ingestion from Google Cloud Storage into BigQuery RAW, followed by dbt transformations and data quality tests in the DEV environment.
+
+GitHub Actions handles CI/CD independently, validating dbt models and Airflow DAGs during pull requests and executing dbt transformations in production after merging into 'main'.
 
 
 ## Data Source & Credits
@@ -71,7 +78,21 @@ The original business case and sample HubSpot and Subskribe datasets were provid
 
 Original source: [Tracksuit Data Engineer Analytics Take-Home Task](https://github.com/gotracksuit/tracksuit-data-engineer-analytics-take-home-task-public)
 
-The project was independently extended into a complete Analytics Engineering workflow, including data architecture, dbt modeling, data quality testing, environment separation, and automated CI/CD.
+The project was independently extended into a complete Analytics Engineering workflow, including data architecture, dbt modeling, data quality testing, environment separation, automated CI/CD, and containerized workflow orchestration with Docker and Airflow.
+
+
+## Data Ingestion & Orchestration
+
+The development pipeline is orchestrated using Apache Airflow 3.1.8 running locally with Docker Compose.
+
+Two Airflow DAGs manage the workflow:
+
+- **gcs_to_bigquery_raw:** ingests the four source CSV files from Google Cloud Storage into the shared BigQuery RAW dataset, replacing existing table contents on each run.
+- **saas_revenue_pipeline_dev:** triggers RAW ingestion and, upon successful completion, executes the dbt DEV build, including transformations and data quality tests.
+
+A dedicated GCP service account is used for RAW ingestion, with permissions restricted to reading source files from GCS and writing to the BigQuery RAW dataset.
+
+Production orchestration using Airflow and Docker on a Google Cloud VM is planned for a later stage.
 
 
 ## Data Modeling
@@ -144,16 +165,18 @@ These tests help detect data quality issues and business logic inconsistencies b
 
 The project separates development, continuous integration, and production environments to isolate development work from automated validation and production deployments.
 
-- **DEV — dbt_karim:** development environment used for building and validating dbt models.
-- **CI — dbt_ci:** isolated environment used by GitHub Actions to validate pull requests before merging.
-- **PROD — dbt_prod_technical / analytics:** production environment separating technical transformation models from business-facing analytics marts.
+- **DEV - dbt_karim:** development environment used for building and validating dbt models, with local Airflow orchestration running through Docker.
+- **CI - dbt_ci:** isolated environment used by GitHub Actions to validate pull requests before merging.
+- **PROD - dbt_prod_technical / analytics:** production environment separating technical transformation models from business-facing analytics marts.
 
-GitHub Actions automates both validation and deployment:
+GitHub Actions manages automated validation and deployment through existing and planned workflows:
 
-- **CI:** each pull request to main runs a complete dbt build in the isolated CI environment.
-- **CD:** each merge to main triggers a production dbt build and deploys the validated models to the production datasets.
+- **dbt CI:** each pull request to 'main' runs a complete dbt build in the isolated CI environment.
+- **Airflow CI:** each pull request to 'main' validates DAG Python syntax, imports, and expected DAG availability using the Airflow Docker image.
+- **dbt CD:** each merge to 'main' triggers a production dbt build in the production datasets.
+- **Airflow CD (planned):** automatically deploys the production Airflow environment and DAGs to a Google Cloud VM using Docker when relevant changes are merged into 'main'.
 
-Dedicated GCP service accounts and dataset-level permissions are used for each environment to maintain separation of responsibilities and limit access.
+Dedicated GCP service accounts and dataset-level permissions are used to maintain environment separation and limit access.
 
 
 ## Power BI Dashboard
