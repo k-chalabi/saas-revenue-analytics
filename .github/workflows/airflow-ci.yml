@@ -23,6 +23,7 @@ jobs:
       - name: Validate Airflow DAGs
         run: |
           docker run --rm \
+            -e BQ_RAW_DATASET=raw_dev \
             -v "${{ github.workspace }}/airflow/dags:/opt/airflow/dags:ro" \
             saas-revenue-airflow:ci \
             python -c "
