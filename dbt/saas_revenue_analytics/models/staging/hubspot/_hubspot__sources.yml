@@ -3,7 +3,7 @@ version: 2
 sources:
   - name: hubspot
     database: saas-revenue-analytics-507122
-    schema: raw
+    schema: "{{ 'raw' if target.name == 'prod' else 'raw_dev' }}"
 
     tables:
       - name: companies

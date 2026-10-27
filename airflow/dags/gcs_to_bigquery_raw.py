@@ -1,3 +1,4 @@
+import os
 from datetime import datetime
 
 from airflow import DAG
@@ -10,7 +11,7 @@ from airflow.providers.google.cloud.transfers.gcs_to_bigquery import (
 # The Airflow connection uses a dedicated ingestion service account.
 PROJECT_ID = "saas-revenue-analytics-507122"
 GCS_BUCKET = "saas-revenue-analytics-raw"
-BQ_DATASET = "raw"
+BQ_DATASET = os.environ["BQ_RAW_DATASET"]
 GCP_CONN_ID = "google_cloud_ingestion"
 
 

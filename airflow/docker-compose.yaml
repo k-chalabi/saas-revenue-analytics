@@ -29,6 +29,7 @@ x-airflow-common: &airflow-common
 
     # Configure dbt to use the DEV environment and its profiles.yml.
     DBT_TARGET: dev
+    BQ_RAW_DATASET: raw_dev
     DBT_PROFILES_DIR: /opt/airflow/dbt-config
 
     # Use the DEV service account for dbt transformations.
