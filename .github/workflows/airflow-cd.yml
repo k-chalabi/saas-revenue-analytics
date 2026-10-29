@@ -26,7 +26,7 @@ jobs:
       # Build the PROD image using the code downloaded from main.
       # The environment file supplies PROD settings and the GCP key paths.
       - name: Build Airflow PROD image
-        shell: pwsh
+        shell: powershell
         env:
           GCP_DBT_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-dbt-prod-key.json
           GCP_INGESTION_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-ingestion-prod-key.json
@@ -37,7 +37,7 @@ jobs:
       # Docker Compose mounts the GCP keys directly from protected storage.
       # No DAG or dbt build is triggered by this deployment.
       - name: Deploy Airflow PROD
-        shell: pwsh
+        shell: powershell
         env:
           GCP_DBT_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-dbt-prod-key.json
           GCP_INGESTION_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-ingestion-prod-key.json
