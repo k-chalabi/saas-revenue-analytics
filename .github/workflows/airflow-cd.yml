@@ -1,0 +1,38 @@
+
+# Automatically deploy Airflow PROD when new code is pushed to main.
+name: Airflow CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-airflow-prod:
+    name: Deploy Airflow PROD
+
+    # Execute this job on our own machine instead of a GitHub-hosted runner.
+    # Initially, the runner runs on our local PC with Docker Desktop.
+    # Later, it can be installed on a VM hosting Airflow PROD.
+    runs-on: self-hosted
+
+    steps:
+      # Download the repository from GitHub into the runner's workspace.
+      # This gives the deployment job access to the Dockerfiles,
+      # Docker Compose configuration, DAGs and dbt project from main.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Build the PROD Docker image using the checked-out source code.
+      # The image includes Airflow, dbt and the PROD DAGs.
+      # The .env.prod file provides environment-specific configuration.
+      - name: Build Airflow PROD image
+        run: |
+          docker compose --env-file airflow/.env.prod -f airflow/docker-compose.prod.yaml build
+
+      # Start or recreate the PROD containers using the newly built image.
+      # This step deploys Airflow but does not trigger any DAG or dbt build.
+      - name: Deploy Airflow PROD
+        run: |
+          docker compose --env-file airflow/.env.prod -f airflow/docker-compose.prod.yaml up -d --no-build
+
