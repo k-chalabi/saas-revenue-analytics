@@ -23,16 +23,25 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Build the PROD Docker image using the checked-out source code.
-      # The image includes Airflow, dbt and the PROD DAGs.
-      # The .env.prod file provides environment-specific configuration.
+      # Build the PROD image using the code downloaded from main.
+      # The environment file supplies PROD settings and the GCP key paths.
       - name: Build Airflow PROD image
+        shell: pwsh
+        env:
+          GCP_DBT_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-dbt-prod-key.json
+          GCP_INGESTION_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-ingestion-prod-key.json
         run: |
-          docker compose --env-file airflow/.env.prod -f airflow/docker-compose.prod.yaml build
+          docker compose --env-file C:\saas-revenue-prod\airflow\.env.prod -f airflow/docker-compose.prod.yaml build
 
-      # Start or recreate the PROD containers using the newly built image.
-      # This step deploys Airflow but does not trigger any DAG or dbt build.
+      # Recreate PROD containers using the newly built image.
+      # Docker Compose mounts the GCP keys directly from protected storage.
+      # No DAG or dbt build is triggered by this deployment.
       - name: Deploy Airflow PROD
+        shell: pwsh
+        env:
+          GCP_DBT_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-dbt-prod-key.json
+          GCP_INGESTION_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-ingestion-prod-key.json
         run: |
-          docker compose --env-file airflow/.env.prod -f airflow/docker-compose.prod.yaml up -d --no-build
+          docker compose --env-file C:\saas-revenue-prod\airflow\.env.prod -f airflow/docker-compose.prod.yaml up -d --no-build
+
 

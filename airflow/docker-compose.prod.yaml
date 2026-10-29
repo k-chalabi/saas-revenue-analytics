@@ -32,9 +32,11 @@ x-airflow-common: &airflow-common
     # PROD runtime logs only; DAGs and dbt are embedded in the image.
     - prod-airflow-logs:/opt/airflow/logs
 
-    # PROD credentials are mounted read-only, never baked into the image.
-    - ../secrets/gcp-dbt-prod-key.json:/opt/airflow/secrets/gcp-dbt-prod-key.json:ro
-    - ../secrets/gcp-ingestion-prod-key.json:/opt/airflow/secrets/gcp-ingestion-prod-key.json:ro
+    # Mount PROD GCP credentials from configurable host paths.
+    # Local development uses the repository's secrets directory by default.
+    # GitHub CD will use protected files stored outside the runner workspace.
+    - ${GCP_DBT_PROD_KEY_PATH:-../secrets/gcp-dbt-prod-key.json}:/opt/airflow/secrets/gcp-dbt-prod-key.json:ro
+    - ${GCP_INGESTION_PROD_KEY_PATH:-../secrets/gcp-ingestion-prod-key.json}:/opt/airflow/secrets/gcp-ingestion-prod-key.json:ro
 
     # Mount the PROD dbt profile under its expected filename.
     - ./config/dbt/profiles.prod.yml:/opt/airflow/dbt-config/profiles.yml:ro
