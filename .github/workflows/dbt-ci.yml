@@ -1,5 +1,8 @@
+
+# Validate dbt models and data quality tests before merging into main.
 name: dbt CI
 
+# Run this workflow whenever a Pull Request targets main.
 on:
   pull_request:
     branches:
@@ -7,25 +10,43 @@ on:
 
 jobs:
   dbt-ci:
+
+    # GitHub provides a temporary Ubuntu machine to execute the CI checks.
     runs-on: ubuntu-latest
 
     steps:
+      # Download the Pull Request code into the runner's workspace.
+      # This gives the following steps access to our dbt project.
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Install Python 3.11 on the runner.
+      # Unlike Airflow CI, dbt runs directly on the GitHub runner,
+      # without using a Docker container.
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: "3.11"
 
+      # Install dbt Core and its BigQuery adapter using pip.
+      # dbt Core executes our SQL models and data quality tests.
+      # The BigQuery adapter allows dbt to interact with Google BigQuery.
       - name: Install dbt
         run: pip install dbt-core==1.12.4 dbt-bigquery==1.12.0
 
+      # Authenticate the GitHub runner to Google Cloud using
+      # the CI service account key stored in GitHub Actions Secrets.
+      # This allows dbt to access BigQuery without exposing credentials.
       - name: Authenticate to Google Cloud
         uses: google-github-actions/auth@v2
         with:
           credentials_json: ${{ secrets.GCP_DBT_CI_KEY }}
 
+      # Create the dbt connection profile on the temporary runner.
+      # The profile tells dbt which BigQuery project and dataset to use.
+      # The CI target isolates validation runs in the dbt_ci dataset,
+      # preventing them from modifying our DEV or PROD models.
+      # OAuth uses the Google Cloud credentials configured above.
       - name: Create dbt CI profile
         run: |
           mkdir -p ~/.dbt
@@ -45,6 +66,10 @@ jobs:
             target: ci
           EOF
 
+      # Execute dbt models and their associated data quality tests
+      # against BigQuery using the CI target.
+      # If a model or test fails, the job fails and the PR is not validated.
+      # This does not deploy or execute anything in Airflow PROD.
       - name: Run dbt build
         working-directory: dbt/saas_revenue_analytics
         run: dbt build --target ci

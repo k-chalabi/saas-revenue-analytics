@@ -1,6 +1,8 @@
 
+# Validate the Airflow environment and DAGs before merging into main.
 name: Airflow CI
 
+# Run this workflow whenever a Pull Request targets main.
 on:
   pull_request:
     branches:
@@ -8,18 +10,32 @@ on:
 
 jobs:
   airflow-ci:
+
+    # GitHub provides a temporary Ubuntu machine to execute the CI checks.
     runs-on: ubuntu-latest
 
     steps:
+      # Download the Pull Request code into the runner's workspace.
+      # The following steps can then access our Dockerfile and DAG files.
       - name: Checkout repository
         uses: actions/checkout@v4
 
+      # Build a temporary Airflow image using our DEV Dockerfile.
+      # This verifies that Airflow and dbt can be installed successfully.
+      # The image is tagged :ci so it can be reused in the DAG validation step.
       - name: Build Airflow Docker image
-        run: docker build -t saas-revenue-airflow:ci ./airflow
+        run: docker build -t saas-revenue-airflow:ci -f airflow/Dockerfile .
 
+      # Use Python installed on the GitHub runner (outside Docker)
+      # to detect syntax errors in all our DAG Python files.
+      # This does not load or execute the DAGs.
       - name: Check DAG Python syntax
         run: python -m compileall -q airflow/dags
 
+      # Start a temporary container using the image built earlier.
+      # Mount the repository's DAG files inside it in read-only mode.
+      # Then use Airflow's DagBag to import the DAGs and detect errors.
+      # This validates DAG loading without executing the pipelines.
       - name: Validate Airflow DAGs
         run: |
           docker run --rm \

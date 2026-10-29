@@ -1,0 +1,47 @@
+
+# Automatically deploy Airflow PROD when new code is pushed to main.
+name: Airflow CD
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  deploy-airflow-prod:
+    name: Deploy Airflow PROD
+
+    # Execute this job on our own machine instead of a GitHub-hosted runner.
+    # Initially, the runner runs on our local PC with Docker Desktop.
+    # Later, it can be installed on a VM hosting Airflow PROD.
+    runs-on: self-hosted
+
+    steps:
+      # Download the repository from GitHub into the runner's workspace.
+      # This gives the deployment job access to the Dockerfiles,
+      # Docker Compose configuration, DAGs and dbt project from main.
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      # Build the PROD image using the code downloaded from main.
+      # The environment file supplies PROD settings and the GCP key paths.
+      - name: Build Airflow PROD image
+        shell: pwsh
+        env:
+          GCP_DBT_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-dbt-prod-key.json
+          GCP_INGESTION_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-ingestion-prod-key.json
+        run: |
+          docker compose --env-file C:\saas-revenue-prod\airflow\.env.prod -f airflow/docker-compose.prod.yaml build
+
+      # Recreate PROD containers using the newly built image.
+      # Docker Compose mounts the GCP keys directly from protected storage.
+      # No DAG or dbt build is triggered by this deployment.
+      - name: Deploy Airflow PROD
+        shell: pwsh
+        env:
+          GCP_DBT_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-dbt-prod-key.json
+          GCP_INGESTION_PROD_KEY_PATH: C:\saas-revenue-prod\secrets\gcp-ingestion-prod-key.json
+        run: |
+          docker compose --env-file C:\saas-revenue-prod\airflow\.env.prod -f airflow/docker-compose.prod.yaml up -d --no-build
+
+

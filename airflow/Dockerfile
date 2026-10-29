@@ -1,16 +1,22 @@
-# Use the official Apache Airflow image as the base.
+
+# Use the official Airflow image, which already includes Python
+# and the dependencies required to run Airflow.
 FROM apache/airflow:3.1.8
 
-# Switch to root to create the dbt virtual environment.
+# Switch to root to create a dedicated Python environment for dbt.
 USER root
 
-# Keep dbt dependencies separate from Airflow to avoid version conflicts.
+# Create a separate Python virtual environment for dbt.
+# This isolates dbt dependencies from Airflow's Python environment
+# and avoids potential dependency conflicts between both tools.
 RUN python -m venv /opt/dbt-venv
 
-# Install the dbt packages required to run transformations in BigQuery.
+# Install dbt Core and its BigQuery adapter inside this environment.
+# Airflow will later use dbt to execute our data transformations.
 RUN /opt/dbt-venv/bin/pip install --no-cache-dir \
     "dbt-core==1.12.4" \
     "dbt-bigquery==1.12.1"
 
-# Run Airflow with its default non-root user.
+# Return to the non-root Airflow user for security.
 USER airflow
+

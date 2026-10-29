@@ -1,0 +1,32 @@
+
+# Use the official Airflow image, which already includes Python
+# and the dependencies required to run Airflow.
+FROM apache/airflow:3.1.8
+
+# Switch to root to create a dedicated Python environment for dbt.
+USER root
+
+# Create a separate Python virtual environment for dbt.
+# This isolates dbt dependencies from Airflow's Python environment
+# and avoids potential dependency conflicts between both tools.
+RUN python -m venv /opt/dbt-venv
+
+# Install dbt Core and its BigQuery adapter in the virtual environment.
+# Airflow will use dbt to execute our SQL transformations in BigQuery.
+RUN /opt/dbt-venv/bin/pip install --no-cache-dir \
+    "dbt-core==1.12.4" \
+    "dbt-bigquery==1.12.1"
+
+# Return to the non-root Airflow user for security.
+USER airflow
+
+# Copy the shared ingestion DAG and PROD DAGs from the repository into the Docker image.
+# Unlike DEV, PROD uses DAG files embedded in the image rather than mounted from the PC.
+# Any DAG modification therefore requires rebuilding and redeploying the image.
+COPY --chown=airflow:root airflow/dags/common/ /opt/airflow/dags/common/
+COPY --chown=airflow:root airflow/dags/prod/ /opt/airflow/dags/prod/
+
+# Copy the entire dbt project (SQL models, tests, macros and configuration) into the image.
+# Airflow PROD will access these files at /opt/airflow/dbt/ when running dbt build.
+# Updating dbt models therefore also requires rebuilding and redeploying the image.
+COPY --chown=airflow:root dbt/saas_revenue_analytics/ /opt/airflow/dbt/
