@@ -30,6 +30,3 @@ COPY --chown=airflow:root airflow/dags/prod/ /opt/airflow/dags/prod/
 # Airflow PROD will access these files at /opt/airflow/dbt/ when running dbt build.
 # Updating dbt models therefore also requires rebuilding and redeploying the image.
 COPY --chown=airflow:root dbt/saas_revenue_analytics/ /opt/airflow/dbt/
-
-# Make dbt commands accessible without specifying their full path.
-ENV PATH="/opt/dbt-venv/bin:${PATH}"

@@ -20,6 +20,3 @@ RUN /opt/dbt-venv/bin/pip install --no-cache-dir \
 # Return to the non-root Airflow user for security.
 USER airflow
 
-# Make dbt commands accessible without specifying their full path.
-ENV PATH="/opt/dbt-venv/bin:${PATH}"
-
