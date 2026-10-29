@@ -1,0 +1,35 @@
+# Credentials and environment variables
+secrets/
+**/secrets/
+.env
+.env.*
+**/.env
+**/.env.*
+**/*-key.json
+**/*.pem
+**/*.key
+
+# Git metadata
+.git/
+.github/
+
+# Python environments and cache
+.venv/
+venv/
+**/.venv/
+**/venv/
+**/__pycache__/
+**/*.pyc
+**/.pytest_cache/
+
+# Airflow runtime files
+airflow/logs/
+
+# dbt generated files
+**/target/
+**/logs/
+**/dbt_packages/
+
+# Local development files
+.vscode/
+.idea/

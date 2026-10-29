@@ -1,0 +1,14 @@
+saas_revenue_analytics:
+  target: prod
+  outputs:
+    prod:
+      type: bigquery
+      method: service-account
+      project: saas-revenue-analytics-507122
+      dataset: dbt_prod_technical
+      location: US
+      keyfile: /opt/airflow/secrets/gcp-dbt-prod-key.json
+      threads: 4
+      priority: interactive
+      job_execution_timeout_seconds: 300
+      job_retries: 1

@@ -1,0 +1,25 @@
+# Use the same Apache Airflow version as DEV.
+FROM apache/airflow:3.1.8
+
+# Create a dedicated virtual environment for dbt.
+USER root
+
+RUN python -m venv /opt/dbt-venv
+
+# Install dbt independently from Airflow.
+RUN /opt/dbt-venv/bin/pip install --no-cache-dir \
+    "dbt-core==1.12.4" \
+    "dbt-bigquery==1.12.1"
+
+# Return to the non-root Airflow user.
+USER airflow
+
+# Copy shared DAGs and PROD-specific DAGs.
+COPY --chown=airflow:root airflow/dags/common/ /opt/airflow/dags/common/
+COPY --chown=airflow:root airflow/dags/prod/ /opt/airflow/dags/prod/
+
+# Copy the validated dbt project into the image.
+COPY --chown=airflow:root dbt/saas_revenue_analytics/ /opt/airflow/dbt/
+
+# Make dbt available to Airflow tasks.
+ENV PATH="/opt/dbt-venv/bin:${PATH}"

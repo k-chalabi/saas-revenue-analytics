@@ -5,8 +5,8 @@ x-airflow-common: &airflow-common
 
   # Build our custom Airflow image with dbt installed.
   build:
-    context: .
-    dockerfile: Dockerfile
+    context: ..
+    dockerfile: airflow/Dockerfile
   image: saas-revenue-airflow:dev
 
   environment:
@@ -44,7 +44,8 @@ x-airflow-common: &airflow-common
 
   volumes:
     # Share DAGs, logs and plugins between Windows and Airflow containers.
-    - ./dags:/opt/airflow/dags
+    - ./dags/common:/opt/airflow/dags/common:ro
+    - ./dags/dev:/opt/airflow/dags/dev:ro
     - ./logs:/opt/airflow/logs
     - ./plugins:/opt/airflow/plugins
 
