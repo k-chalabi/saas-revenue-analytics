@@ -29,3 +29,17 @@ airflow/logs/
 airflow/__pycache__/
 airflow/airflow.db
 airflow/standalone_admin_password.txt
+
+# Terraform
+**/.terraform/*
+*.tfstate
+*.tfstate.*
+*.tfvars
+*.tfvars.json
+*.tfplan
+crash.log
+crash.*.log
+override.tf
+override.tf.json
+*_override.tf
+*_override.tf.json
