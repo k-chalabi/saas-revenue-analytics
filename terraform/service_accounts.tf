@@ -70,3 +70,19 @@ resource "google_service_account" "powerbi" {
   description  = "Service account used by Power BI to read production analytics marts"
   disabled     = false
 }
+
+# ------------------------------------------------------------
+# CI/CD - Terraform
+# ------------------------------------------------------------
+
+resource "google_service_account" "terraform_ci" {
+  account_id   = "terraform-ci"
+  display_name = "Terraform CI"
+  description  = "Service account used by GitHub Actions to validate and plan Terraform changes"
+}
+
+resource "google_service_account" "terraform_cd" {
+  account_id   = "terraform-cd"
+  display_name = "Terraform CD"
+  description  = "Service account used by GitHub Actions to deploy approved Terraform changes"
+}
