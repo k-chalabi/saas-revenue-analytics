@@ -6,9 +6,6 @@ on:
   pull_request:
     branches:
       - main
-    paths:
-      - "terraform/**"
-      - ".github/workflows/terraform-ci.yml"
 
 permissions:
   contents: read
