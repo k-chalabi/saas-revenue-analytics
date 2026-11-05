@@ -118,6 +118,7 @@ jobs:
             for (const [claim, value] of Object.entries(expected)) {
               core.info(`${claim}: ${payload[claim] === value ? 'MATCH' : 'MISMATCH'}`);
             }
+              core.info(`OIDC subject: ${payload.sub}`);
 
       # Authenticate to GCP using Workload Identity Federation.
       # No service account JSON key is required.

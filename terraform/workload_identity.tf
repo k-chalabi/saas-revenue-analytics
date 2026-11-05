@@ -43,7 +43,7 @@ resource "google_iam_workload_identity_pool_provider" "github" {
     "attribute.repository_owner_id" = "assertion.repository_owner_id"
     "attribute.ref"                 = "assertion.ref"
     "attribute.workflow_ref"        = "assertion.workflow_ref"
-    "attribute.terraform_cd"        = "assertion.repository_id == '1372472439' && assertion.repository_owner_id == '226288651' && assertion.workflow_ref == 'k-chalabi/saas-revenue-analytics/.github/workflows/terraform-cd.yml@refs/heads/main' && assertion.sub == 'repo:k-chalabi/saas-revenue-analytics:environment:terraform-deploy' ? 'authorized' : 'unauthorized'"
+    "attribute.terraform_cd"        = "assertion.repository_id == '1372472439' && assertion.repository_owner_id == '226288651' && assertion.workflow_ref == 'k-chalabi/saas-revenue-analytics/.github/workflows/terraform-cd.yml@refs/heads/main' && assertion.sub == 'repo:k-chalabi@226288651/saas-revenue-analytics@1372472439:environment:terraform-deploy' ? 'authorized' : 'unauthorized'"
   }
 
   # Accept tokens only from our GitHub repository and its owner.
