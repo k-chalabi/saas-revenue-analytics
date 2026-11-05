@@ -114,6 +114,28 @@ resource "google_project_iam_member" "terraform_ci_viewer" {
 }
 
 # ------------------------------------------------------------
+# CI - GCS IAM Policy Read Access
+# ------------------------------------------------------------
+# Allow Terraform CI to read GCS bucket IAM policies during planning.
+
+resource "google_project_iam_custom_role" "terraform_ci_bucket_iam_reader" {
+  project     = "saas-revenue-analytics-507122"
+  role_id     = "terraformCIBucketIAMReader"
+  title       = "Terraform CI Bucket IAM Reader"
+  description = "Read GCS bucket IAM policies during Terraform planning"
+
+  permissions = [
+    "storage.buckets.getIamPolicy"
+  ]
+}
+
+resource "google_project_iam_member" "terraform_ci_bucket_iam_reader" {
+  project = "saas-revenue-analytics-507122"
+  role    = google_project_iam_custom_role.terraform_ci_bucket_iam_reader.id
+  member  = google_service_account.terraform_ci.member
+}
+
+# ------------------------------------------------------------
 # CI - Terraform State Access
 # ------------------------------------------------------------
 
