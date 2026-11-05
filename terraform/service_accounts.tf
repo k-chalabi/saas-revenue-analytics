@@ -79,10 +79,12 @@ resource "google_service_account" "terraform_ci" {
   account_id   = "terraform-ci"
   display_name = "Terraform CI"
   description  = "Service account used by GitHub Actions to validate and plan Terraform changes"
+  disabled     = false
 }
 
 resource "google_service_account" "terraform_cd" {
   account_id   = "terraform-cd"
   display_name = "Terraform CD"
   description  = "Service account used by GitHub Actions to deploy approved Terraform changes"
+  disabled     = false
 }

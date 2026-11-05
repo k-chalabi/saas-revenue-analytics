@@ -37,6 +37,8 @@ airflow/standalone_admin_password.txt
 *.tfvars
 *.tfvars.json
 *.tfplan
+tfplan
+plan.txt
 crash.log
 crash.*.log
 override.tf

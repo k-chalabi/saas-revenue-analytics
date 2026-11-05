@@ -40,7 +40,6 @@ resource "google_storage_bucket" "raw" {
     google_managed_encryption_enforcement_config {
       restriction_mode = "NotRestricted"
     }
-
   }
 
   lifecycle {

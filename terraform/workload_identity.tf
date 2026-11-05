@@ -35,13 +35,14 @@ resource "google_iam_workload_identity_pool_provider" "github" {
   display_name = "GitHub OIDC"
   description  = "OIDC provider for GitHub Actions"
 
-  # Get the repository, owner and branch information from the GitHub token.
+  # Get the repository, owner, branch and workflow information from the GitHub token.
   attribute_mapping = {
     "google.subject"                = "assertion.sub"
     "attribute.repository"          = "assertion.repository"
     "attribute.repository_id"       = "assertion.repository_id"
     "attribute.repository_owner_id" = "assertion.repository_owner_id"
     "attribute.ref"                 = "assertion.ref"
+    "attribute.workflow_ref"        = "assertion.workflow_ref"
   }
 
   # Accept tokens only from our GitHub repository and its owner.

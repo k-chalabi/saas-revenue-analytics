@@ -42,19 +42,19 @@ resource "google_bigquery_dataset" "raw_dev" {
   # DEV ingestion
   access {
     role          = "WRITER"
-    user_by_email = "ingestion-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.ingestion.email
   }
 
   # DEV dbt transformations
   access {
     role          = "READER"
-    user_by_email = "dbt-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt.email
   }
 
   # CI dbt transformations
   access {
     role          = "READER"
-    user_by_email = "dbt-ci-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt_ci.email
   }
 
   lifecycle {
@@ -93,7 +93,7 @@ resource "google_bigquery_dataset" "dbt_karim" {
   # DEV dbt transformations
   access {
     role          = "WRITER"
-    user_by_email = "dbt-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt.email
   }
 
   lifecycle {
@@ -138,7 +138,7 @@ resource "google_bigquery_dataset" "dbt_ci" {
   # CI dbt transformations
   access {
     role          = "WRITER"
-    user_by_email = "dbt-ci-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt_ci.email
   }
 
   lifecycle {
@@ -183,13 +183,13 @@ resource "google_bigquery_dataset" "raw" {
   # PROD ingestion
   access {
     role          = "WRITER"
-    user_by_email = "ingestion-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.ingestion_prod.email
   }
 
   # PROD dbt transformations
   access {
     role          = "READER"
-    user_by_email = "dbt-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt_prod.email
   }
 
   lifecycle {
@@ -234,7 +234,7 @@ resource "google_bigquery_dataset" "dbt_prod_technical" {
   # PROD dbt transformations
   access {
     role          = "WRITER"
-    user_by_email = "dbt-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt_prod.email
   }
 
   lifecycle {
@@ -279,13 +279,13 @@ resource "google_bigquery_dataset" "analytics" {
   # PROD dbt transformations
   access {
     role          = "WRITER"
-    user_by_email = "dbt-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.dbt_prod.email
   }
 
   # Power BI reporting
   access {
     role          = "READER"
-    user_by_email = "powerbi-reader@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+    user_by_email = google_service_account.powerbi.email
   }
 
   lifecycle {

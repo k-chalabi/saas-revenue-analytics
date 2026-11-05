@@ -13,19 +13,19 @@
 resource "google_project_iam_member" "ingestion_job_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:ingestion-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.ingestion.member
 }
 
 resource "google_project_iam_member" "dbt_job_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:dbt-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.dbt.member
 }
 
 resource "google_project_iam_member" "dbt_ci_job_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:dbt-ci-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.dbt_ci.member
 }
 
 # ------------------------------------------------------------
@@ -35,13 +35,13 @@ resource "google_project_iam_member" "dbt_ci_job_user" {
 resource "google_project_iam_member" "ingestion_prod_job_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:ingestion-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.ingestion_prod.member
 }
 
 resource "google_project_iam_member" "dbt_prod_job_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:dbt-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.dbt_prod.member
 }
 
 # ------------------------------------------------------------
@@ -51,13 +51,13 @@ resource "google_project_iam_member" "dbt_prod_job_user" {
 resource "google_project_iam_member" "powerbi_job_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.jobUser"
-  member  = "serviceAccount:powerbi-reader@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.powerbi.member
 }
 
 resource "google_project_iam_member" "powerbi_read_session_user" {
   project = "saas-revenue-analytics-507122"
   role    = "roles/bigquery.readSessionUser"
-  member  = "serviceAccount:powerbi-reader@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member  = google_service_account.powerbi.member
 }
 
 
@@ -71,9 +71,9 @@ resource "google_project_iam_member" "powerbi_read_session_user" {
 # ------------------------------------------------------------
 
 resource "google_storage_bucket_iam_member" "ingestion_raw_viewer" {
-  bucket = "saas-revenue-analytics-raw"
+  bucket = google_storage_bucket.raw.name
   role   = "roles/storage.objectViewer"
-  member = "serviceAccount:ingestion-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member = google_service_account.ingestion.member
 }
 
 # ------------------------------------------------------------
@@ -81,9 +81,9 @@ resource "google_storage_bucket_iam_member" "ingestion_raw_viewer" {
 # ------------------------------------------------------------
 
 resource "google_storage_bucket_iam_member" "ingestion_prod_raw_viewer" {
-  bucket = "saas-revenue-analytics-raw"
+  bucket = google_storage_bucket.raw.name
   role   = "roles/storage.objectViewer"
-  member = "serviceAccount:ingestion-prod-service-account@saas-revenue-analytics-507122.iam.gserviceaccount.com"
+  member = google_service_account.ingestion_prod.member
 }
 
 
@@ -156,4 +156,93 @@ resource "google_storage_bucket_iam_member" "terraform_ci_lock" {
 
     expression = "resource.type == 'storage.googleapis.com/Object' && resource.name == 'projects/_/buckets/saas-revenue-analytics-tfstate/objects/terraform/state/default.tflock'"
   }
+}
+
+
+# ------------------------------------------------------------
+# Terraform CD IAM - Workload Identity Federation
+# ------------------------------------------------------------
+# Manage GitHub Actions access to the Terraform CD service account.
+
+# ------------------------------------------------------------
+# CD - GitHub Actions Authentication
+# ------------------------------------------------------------
+
+resource "google_service_account_iam_member" "terraform_cd_wif" {
+  service_account_id = google_service_account.terraform_cd.name
+  role               = "roles/iam.workloadIdentityUser"
+
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.ref/refs/heads/main"
+}
+
+# ------------------------------------------------------------
+# CD - Service Account Management
+# ------------------------------------------------------------
+# Allow Terraform CD to create and manage service accounts.
+
+resource "google_project_iam_member" "terraform_cd_service_account_admin" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/iam.serviceAccountAdmin"
+  member  = google_service_account.terraform_cd.member
+}
+
+# ------------------------------------------------------------
+# CD - Cloud Storage Management
+# ------------------------------------------------------------
+# Allow Terraform CD to manage Cloud Storage buckets and objects.
+
+resource "google_project_iam_member" "terraform_cd_storage_admin" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/storage.admin"
+  member  = google_service_account.terraform_cd.member
+}
+
+# ------------------------------------------------------------
+# CD - BigQuery Management
+# ------------------------------------------------------------
+# Allow Terraform CD to create and manage BigQuery datasets.
+
+resource "google_project_iam_member" "terraform_cd_bigquery_user" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/bigquery.user"
+  member  = google_service_account.terraform_cd.member
+}
+
+resource "google_project_iam_member" "terraform_cd_bigquery_data_owner" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/bigquery.dataOwner"
+  member  = google_service_account.terraform_cd.member
+}
+
+# ------------------------------------------------------------
+# CD - Project IAM Management
+# ------------------------------------------------------------
+# Allow Terraform CD to manage project IAM permissions.
+
+resource "google_project_iam_member" "terraform_cd_project_iam_admin" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/resourcemanager.projectIamAdmin"
+  member  = google_service_account.terraform_cd.member
+}
+
+# ------------------------------------------------------------
+# CD - Workload Identity Federation Management
+# ------------------------------------------------------------
+# Allow Terraform CD to manage workload identity pools and providers.
+
+resource "google_project_iam_member" "terraform_cd_workload_identity_pool_admin" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/iam.workloadIdentityPoolAdmin"
+  member  = google_service_account.terraform_cd.member
+}
+
+# ------------------------------------------------------------
+# CD - Custom IAM Role Management
+# ------------------------------------------------------------
+# Allow Terraform CD to create and manage custom IAM roles.
+
+resource "google_project_iam_member" "terraform_cd_role_admin" {
+  project = "saas-revenue-analytics-507122"
+  role    = "roles/iam.roleAdmin"
+  member  = google_service_account.terraform_cd.member
 }
