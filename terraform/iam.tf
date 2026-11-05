@@ -189,12 +189,14 @@ resource "google_storage_bucket_iam_member" "terraform_ci_lock" {
 # ------------------------------------------------------------
 # CD - GitHub Actions Authentication
 # ------------------------------------------------------------
+# Allow Terraform CD impersonation only from the approved
+# deployment workflow on main using terraform-deploy.
 
 resource "google_service_account_iam_member" "terraform_cd_wif" {
   service_account_id = google_service_account.terraform_cd.name
   role               = "roles/iam.workloadIdentityUser"
 
-  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.ref/refs/heads/main"
+  member = "principalSet://iam.googleapis.com/${google_iam_workload_identity_pool.github.name}/attribute.terraform_cd/authorized"
 }
 
 # ------------------------------------------------------------
