@@ -98,28 +98,6 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4
 
-      # Temporarily check the GitHub OIDC claims used by Terraform CD.
-      - name: Diagnose Terraform CD OIDC claims
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const token = await core.getIDToken();
-            const payload = JSON.parse(
-              Buffer.from(token.split('.')[1], 'base64url').toString()
-            );
-
-            const expected = {
-              repository_id: '1372472439',
-              repository_owner_id: '226288651',
-              workflow_ref: 'k-chalabi/saas-revenue-analytics/.github/workflows/terraform-cd.yml@refs/heads/main',
-              sub: 'repo:k-chalabi/saas-revenue-analytics:environment:terraform-deploy'
-            };
-
-            for (const [claim, value] of Object.entries(expected)) {
-              core.info(`${claim}: ${payload[claim] === value ? 'MATCH' : 'MISMATCH'}`);
-            }
-              core.info(`OIDC subject: ${payload.sub}`);
-
       # Authenticate to GCP using Workload Identity Federation.
       # No service account JSON key is required.
       - name: Authenticate to GCP
