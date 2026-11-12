@@ -4,14 +4,9 @@
 
 SaaS Revenue Analytics is an end-to-end Analytics Engineering project built around CRM and billing data from HubSpot and Subskribe.
 
-The project transforms raw operational data into reliable, analytics-ready datasets for analyzing customers, subscriptions, invoices, and SaaS revenue.
+The project transforms raw operational data into reliable, analytics-ready datasets to support customer, subscription, and revenue analysis through Power BI dashboards.
 
-The project is designed as a modern analytics workflow covering data ingestion, transformation and
-modeling with BigQuery and dbt, data quality testing, environment separation,
-automated CI/CD pipelines, business intelligence with Power BI, and workflow
-orchestration with Airflow.
-
-Docker is used to containerize separate Airflow DEV and PROD environments, ensuring consistent and isolated workflow orchestration. GitHub Actions automates CI validation and production deployment through a self-hosted Windows runner and Docker Compose. Future infrastructure improvements include deployment on a Google Cloud VM and Infrastructure as Code with Terraform.
+It combines Google Cloud, dbt, Airflow, and Docker for data processing and orchestration, with Terraform for infrastructure management and GitHub Actions for automated testing and deployment.
 
 
 ## Project Roadmap
@@ -30,7 +25,9 @@ Docker is used to containerize separate Airflow DEV and PROD environments, ensur
 - [x] CD pipeline (Airflow PROD deployment)
 
 ### Infrastructure as Code
-- [ ] Terraform infrastructure
+- [x] Terraform infrastructure management (GCP)
+- [x] CI pipeline (Terraform validation and plan)
+- [x] CD pipeline (Terraform deployment)
 
 ### Business Intelligence
 - [x] Power BI - Executive Overview
@@ -62,47 +59,57 @@ The following diagram illustrates the current architecture of the SaaS Revenue A
            ▼             ▼                        ▼
        DEVELOPMENT       CI                   PRODUCTION
         dbt_karim      dbt_ci                     │
-           │             │              ┌─────────┴─────────┐
-           ▼             ▼              ▼                   ▼
+           │             │               ┌────────┴─────────┐
+           ▼             ▼               ▼                  ▼
       stg/int/marts  stg/int/marts  dbt_prod_technical   analytics
-                                       stg / int           marts
+                                        stg / int          marts
                                                              │
                                                              ▼
                                                           Power BI
 ```
-The DEV and CI environments share the same BigQuery RAW dataset ('raw_dev') but execute dbt transformations independently. Airflow DEV orchestrates ingestion and dbt transformations into 'dbt_karim', while GitHub Actions CI runs 'dbt build' in the isolated 'dbt_ci' dataset when a pull request is opened or updated.
+The DEV and CI environments share the same BigQuery RAW dataset ('raw_dev') but execute dbt transformations independently. Airflow DEV orchestrates data ingestion and dbt transformations into 'dbt_karim', while GitHub Actions CI runs 'dbt build' in the isolated 'dbt_ci' dataset.
+
+In production, Airflow orchestrates data ingestion into the BigQuery 'raw' dataset, followed by dbt transformations in 'dbt_prod_technical' (staging and intermediate models) and 'analytics' (marts), which are consumed by Power BI.
 
 ```text
-                         CI/CD - GitHub Actions
+                            CI/CD - GitHub Actions
 
-          Pull Request to main              Merge to main
-                   │                              │
-                   ▼                              ▼
-            GitHub Actions                 GitHub Actions
-                  CI                             CD
-                   │                              │
-                   ▼                              ▼
-          GitHub-hosted runner             Self-hosted runner
-               (Ubuntu)                       (Windows)
-                   │                              │
-          ┌────────┴────────┐                     ▼
-          │                 │               Docker Compose
-          ▼                 ▼               Build & deploy
-       dbt CI           Airflow CI           Airflow PROD
-          │                 │                     │
-          ▼                 ▼                     ▼
-      dbt build       Docker build      ┌────────────────────┐
-      (dbt_ci)        DAG validation    │    AIRFLOW PROD    │
-                                        │                    │
-                                        │  Docker containers │
-                                        │                    │
-                                        │  DAG orchestration │
-                                        │  GCS → BigQuery    │
-                                        │        ↓           │
-                                        │     dbt build      │
-                                        └────────────────────┘
+
+          PULL REQUEST TO MAIN                         MERGE TO MAIN
+                  │                                          │
+                  ▼                                          ▼
+          GitHub Actions CI                          GitHub Actions CD
+                  │                                          │
+         ┌────────┼────────┐                       ┌─────────┴─────────┐
+         │        │        │                       │                   │
+         ▼        ▼        ▼                       ▼                   ▼
+       dbt CI  Airflow CI  Terraform CI         Airflow CD         Terraform CD
+         │        │        │                       │                   │
+         ▼        ▼        ▼                       ▼                   ▼
+     dbt build   Docker   fmt / validate      Self-hosted         GitHub-hosted
+     (dbt_ci)    build    terraform plan      runner Windows      runner Ubuntu
+                DAG checks                         │                   │
+                                                   ▼                   ▼
+                                              Docker Compose      Terraform plan
+                                              Build & deploy           │
+                                                   │                   ▼
+                                                   ▼              Manual approval
+                                             ┌───────────────┐         │
+                                             │ AIRFLOW PROD  │         ▼
+                                             │               │    Terraform apply
+                                             │ GCS → BigQuery│         │
+                                             │      │ (raw)  │         ▼
+                                             │      ▼        │    GCP Infrastructure
+                                             │  dbt build    │    GCS / BigQuery
+                                             └───────────────┘    IAM / WIF
 ```
-GitHub Actions automates continuous integration and deployment using separate runners. Pull requests trigger dbt and Airflow validation on GitHub-hosted Ubuntu runners. After merging into 'main', a self-hosted Windows runner uses Docker Compose to build and deploy the Airflow PROD environment. Airflow PROD then orchestrates data ingestion from Google Cloud Storage into BigQuery 'raw', followed by dbt transformations in 'dbt_prod_technical' and 'analytics'.
+GitHub Actions automates CI/CD workflows for dbt, Airflow, and Terraform.
+
+Pull requests to 'main' trigger validation workflows on GitHub-hosted Ubuntu runners: dbt builds and tests models in 'dbt_ci', Airflow validates Docker builds and DAGs, and Terraform runs formatting checks, validation, and infrastructure planning.
+
+After merging into 'main', Airflow CD deploys the production environment through Docker Compose using a self-hosted Windows runner. Terraform CD, when triggered by infrastructure changes, uses a GitHub-hosted Ubuntu runner to plan and apply changes to GCP infrastructure, with manual approval required before deployment.
+
+Airflow PROD then orchestrates data ingestion from Google Cloud Storage into BigQuery and executes dbt transformations when its production DAGs are triggered.
 
 
 ## Data Source & Credits
@@ -113,7 +120,7 @@ The original business case and sample HubSpot and Subskribe datasets were provid
 
 Original source: [Tracksuit Data Engineer Analytics Take-Home Task](https://github.com/gotracksuit/tracksuit-data-engineer-analytics-take-home-task-public)
 
-The project was independently extended into a complete Analytics Engineering workflow, including data architecture, dbt modeling, data quality testing, environment separation, automated CI/CD, and containerized workflow orchestration with Docker and Airflow.
+The project was independently extended into a complete Analytics Engineering workflow, including data architecture, dbt modeling, data quality testing, environment separation, automated CI/CD, infrastructure management with Terraform, and containerized workflow orchestration with Docker and Airflow.
 
 
 ## Data Ingestion & Orchestration
@@ -122,10 +129,10 @@ The data pipelines are orchestrated using Apache Airflow 3.1.8, with separate DE
 
 ### Airflow DAGs
 
-Both environments use the same orchestration logic through two DAGs:
+Both environments use the same orchestration logic, implemented through a shared ingestion DAG and environment-specific pipeline DAGs:
 
-- **gcs_to_bigquery_raw:** ingests the four source CSV files from Google Cloud Storage into BigQuery, replacing existing table contents on each run. The destination dataset is configured through the BQ_RAW_DATASET environment variable.
-- **saas_revenue_pipeline_dev / saas_revenue_pipeline_prod:** orchestrate the complete pipeline by triggering RAW ingestion, followed by the corresponding dbt build upon successful ingestion, including transformations and data quality tests.
+- **gcs_to_bigquery_raw:** ingests four source CSV files from Google Cloud Storage into the corresponding BigQuery RAW dataset, replacing existing table contents on each run. The destination dataset is configured through the BQ_RAW_DATASET environment variable.
+- **saas_revenue_pipeline_dev / saas_revenue_pipeline_prod:** orchestrate the complete pipeline by triggering RAW ingestion, followed by the corresponding dbt build upon successful ingestion, executing data transformations and quality tests.
 
 ### Environment Configuration
 
@@ -138,11 +145,13 @@ The DEV and PROD environments execute the same pipeline with separate BigQuery d
 
 ### Security & Credentials
 
-DEV and PROD use dedicated GCP service accounts with permissions restricted according to their responsibilities. Separate accounts are used for data ingestion and production dbt transformations, limiting access to the required Google Cloud Storage and BigQuery resources.
+GCP access is managed through dedicated service accounts following the principle of least privilege. Separate identities are used for data ingestion, dbt transformations, and infrastructure management, with permissions scoped to their respective responsibilities.
 
-In production, GCP credentials and environment configuration files are stored outside the GitHub repository in a dedicated local directory. Windows NTFS permissions restrict access to authorized Windows accounts, including the account running the self-hosted GitHub Actions runner.
+For Airflow PROD, GCP credentials and environment configuration files are stored outside the GitHub repository in a dedicated local directory, protected by Windows NTFS permissions. Docker Compose mounts these files into the production containers at runtime.
 
-During deployment, Docker Compose mounts the required credentials into the Airflow PROD containers, allowing the production pipeline to authenticate with GCP without storing sensitive files in the repository.
+Terraform CI/CD workflows use Workload Identity Federation (WIF) to authenticate with GCP without storing long-lived service account keys in GitHub. Separate service accounts are used for CI validation and planning versus CD deployment, with manual approval required before applying infrastructure changes.
+
+Terraform state is stored remotely in a dedicated Google Cloud Storage bucket with versioning enabled. Terraform CI can read the state but cannot modify it. Its only write permissions are restricted to creating and deleting the '.tflock' file, which Terraform uses to lock the state during planning and prevent concurrent operations from interfering with each other.
 
 
 ## Data Modeling
@@ -227,9 +236,13 @@ GitHub Actions automates continuous integration and production deployment throug
 
 - **dbt CI:** runs 'dbt build' against the CI target for pull requests to 'main', validating transformations and data quality tests in 'dbt_ci'.
 - **Airflow CI:** builds the Airflow DEV Docker image and validates DAG Python syntax, imports, and DAG availability during pull requests to 'main'.
+- **Terraform CI:** runs 'terraform fmt', 'terraform validate', and 'terraform plan' during pull requests to 'main', without applying infrastructure changes.
 - **Airflow CD:** triggered by changes merged into 'main', using a self-hosted Windows runner and Docker Compose to build the production Docker image and deploy the Airflow PROD containers.
+- **Terraform CD:** triggered by Terraform-related changes merged into 'main', generating an infrastructure plan and applying changes to GCP after manual approval.
 
-CI workflows execute on GitHub-hosted Ubuntu runners, while production deployment runs on the self-hosted Windows runner.
+CI workflows run on GitHub-hosted Ubuntu runners. Airflow CD uses a self-hosted Windows runner, while Terraform CD runs on a GitHub-hosted Ubuntu runner.
+
+Terraform CI/CD workflows use a shared remote state backend in Google Cloud Storage to maintain consistency between infrastructure planning and deployment.
 
 
 ## Power BI Dashboard
