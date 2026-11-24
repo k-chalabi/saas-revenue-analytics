@@ -253,6 +253,11 @@ The Executive Overview dashboard provides a consolidated view of SaaS business p
 
 Built with Power BI, it features custom KPI cards powered by DAX measures, dynamic year and month slicers, MoM and YoY comparisons, conditional formatting, interactive cross-filtering, informational tooltips, and bookmark-driven visual navigation.
 
+The dashboard is organized into two complementary sections:
+
+- **Monthly Performance:** six key performance indicators (Billed Revenue, Revenue per Account, Customer Churn Rate, Active Customers, New Customers, and Churned Customers), with interactive revenue and active customer breakdowns by company size and country.
+- **Annual Trends:** monthly revenue trends and customer base evolution throughout the selected year.
+
 **Data Coverage:** The dataset covers SaaS activity through April 2026, the last complete month available for analysis. Reporting is limited to this period to ensure consistent monthly KPIs and avoid comparisons based on incomplete months.
 
 ![SaaS Revenue Analytics - Executive Overview](powerbi/executive-overview.png)
